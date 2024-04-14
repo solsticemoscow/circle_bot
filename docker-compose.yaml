@@ -1,0 +1,63 @@
+version: '3'
+name: circle-apps
+
+volumes:
+  DATA:
+  postgres:
+
+services:
+
+  circle-bot:
+    container_name: circle-bot
+    restart: on-failure
+    build:
+      context: .
+      dockerfile: Dockerfile
+    entrypoint: ["python3", "BOT/app_bot.py"]
+    environment:
+      POSTGRES_HOST: 'postgres'
+    volumes:
+      - DATA:/code/BOT/DATA:ro
+    ports:
+      - 8873:8873
+    depends_on:
+      circle-postgres:
+        condition: service_healthy
+
+  circle-tasker:
+    container_name: circle-tasker
+    restart: on-failure
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      POSTGRES_HOST: 'postgres'
+    volumes:
+      - DATA:/code/BOT/DATA
+    entrypoint: ["python3", "BOT/app_task_manager.py"]
+    ports:
+      - 8872:8872
+    depends_on:
+      circle-postgres:
+        condition: service_healthy
+
+  circle-postgres:
+    container_name: circle-postgres
+    image: postgres:14.8-alpine3.18
+    environment:
+      POSTGRES_DB: postgres_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      PGDATA: "/var/lib/postgresql/data/pgdata"
+    volumes:
+       - postgres:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    restart: on-failure
+    healthcheck:
+      test: [ "CMD-SHELL", "sh -c 'pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}'" ]
+      interval: 5s
+      timeout: 25s
+      retries: 5
+
+

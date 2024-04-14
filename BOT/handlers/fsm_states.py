@@ -1,0 +1,25 @@
+from aiogram.fsm.state import StatesGroup, State
+
+
+class FSMSTATES(StatesGroup):
+    STEP1_EDIT_HIMSG = State()
+    STEP2_ADD_WHITELIST = State()
+    STEP3_REMOVE_WHITELIST = State()
+    STEP4_SENDMSG = State()
+    STEP5_SENDMSG_MEDIA = State()
+    STEP6_SENDMSG_MEDIA2 = State()
+    STEP7_SENDMSG_GROUP = State()
+    STEP8_ADMIN_CHANNEL = State()
+    STEP9_BUTTONS = State()
+    STEP10_BUTTONS_ADD = State()
+    STEP11_BUTTONS_REMOVE = State()
+    STEP12_BUTTONS_ADD_TEXT = State()
+    STEP13_USER_CHANNEL = State()
+    STEP_TASK_DURATION = State()
+    STEP_TASK_MUSIC = State()
+    STEP_TASK_MUSIC_GET = State()
+    STEP_TASK_TEXTURE = State()
+    STEP_TASK_ROUND = State()
+    STEP_TASK_ROUND_IMAGE = State()
+    STEP_TASK_CREATE = State()
+    STEP_TASK_ROUND_QA = State()
