@@ -39,12 +39,12 @@ async def step_task_music(call: CallbackQuery, bot: Bot, state: FSMContext):
         )
         await state.set_state(FSMSTATES.STEP_TASK_MUSIC_GET)
     if DATA == 'no':
-        await bot.send_message(chat_id=USER_ID, text='⌛ Создаю ваш кружочек...')
+        MSG = await bot.send_message(chat_id=USER_ID, text='⌛ Создаю ваш кружочек...')
 
         DATA_STATE = await state.get_data()
 
         if DATA_STATE['round'] is True:
-            TASK = {"type": "1", "video_note_time": int(DATA_STATE["video_note_time"])}
+            TASK = {"type": "1", "msg_id": MSG.message_id, "video_note_time": int(DATA_STATE["video_note_time"])}
 
             stmt = update(Users).values(task_status=True, task=TASK).where(Users.id == USER_ID)
             await DB_SESSION.execute(statement=stmt)
@@ -52,7 +52,7 @@ async def step_task_music(call: CallbackQuery, bot: Bot, state: FSMContext):
             await DB_SESSION.close()
 
         else:
-            TASK = {"type": "2", "video_note_time": int(DATA_STATE["video_note_time"])}
+            TASK = {"type": "2", "msg_id": MSG.message_id, "video_note_time": int(DATA_STATE["video_note_time"])}
 
             stmt = update(Users).values(task_status=True, task=TASK).where(Users.id == USER_ID)
             await DB_SESSION.execute(statement=stmt)

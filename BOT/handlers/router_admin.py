@@ -27,7 +27,7 @@ router = Router()
 async def get_himsg(message: types.Message, state: FSMContext):
     TEXT: str = message.text
 
-    stmt = insert(Data).values(hi_message=TEXT)
+    stmt = update(Data).values(hi_message=TEXT)
     await DB_SESSION.execute(statement=stmt)
     await DB_SESSION.commit()
 

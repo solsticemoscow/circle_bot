@@ -209,10 +209,10 @@ async def get_all_text_msgs(message: Message, bot: Bot, state: FSMContext):
 
 
 
-@router.message()
-async def get_all(message: Message, bot: Bot):
-    print(message)
-    await bot.delete_message(message.from_user.id, message.message_id)
+# @router.message()
+# async def get_all(message: Message, bot: Bot):
+#     print(message)
+#     await bot.delete_message(message.from_user.id, message.message_id)
 
 
 

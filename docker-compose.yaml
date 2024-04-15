@@ -1,8 +1,8 @@
 version: '3'
 name: circle-apps
 
-volumes:
-  dbdata:
+#volumes:
+#  dbdata:
 
 services:
 

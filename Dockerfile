@@ -1,9 +1,9 @@
 FROM python:3.11-slim
 
-WORKDIR /code
-
 ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
+
+WORKDIR /code
 
 RUN ln -snf /usr/share/zoneinfo/Europe/Moscow /etc/localtime
 

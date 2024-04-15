@@ -1,6 +1,9 @@
 import asyncio
 from typing import Union
+
+import requests
 from PIL import Image
+import telebot
 
 from moviepy.editor import *
 from moviepy.video.fx.crop import crop
@@ -9,9 +12,10 @@ from proglog import ProgressBarLogger
 from pydub import AudioSegment
 from moviepy.config import change_settings
 
-from BOT.config import DATA_INPUT, ROOT_DIR, THREADS
+from BOT.config import DATA_INPUT, ROOT_DIR, THREADS, TOKEN
+from app_bot import BOT
 
-
+FILE = None
 
 class VideoNote:
     video: Union[VideoClip, None]
@@ -115,16 +119,31 @@ class VideoNote:
         try:
             class MyBarLogger(ProgressBarLogger):
 
+                def __init__(self, USER_ID):
+                    super().__init__()
+                    self.USER_ID = USER_ID
+                    print(self.USER_ID)
+
+
                 def callback(self, **changes):
                     for (parameter, value) in changes.items():
                         print('Parameter %s is now %s' % (parameter, value))
 
                 def bars_callback(self, bar, attr, value, old_value=None):
                     percentage = (value / self.bars[bar]['total']) * 100
-                    print(round(percentage))
+
+                    if percentage == 25:
+                        requests.get(f"https://api.telegram.org/bot{TOKEN}/editMessage?message_id=, chat_id={self.USER_ID}&text=⌛️ Создаю ваш кружочек...готово на {str(round(percentage))}%")
+                    if percentage == 50:
+                        requests.get(f"https://api.telegram.org/bot{TOKEN}/sendMessage?chat_id={self.USER_ID}&text=f'🔄 Обработано: {str(round(percentage))}'")
+                    if percentage == 75:
+                        requests.get(f"https://api.telegram.org/bot{TOKEN}/sendMessage?chat_id={self.USER_ID}&text=f'🔄 Обработано: {str(round(percentage))}'")
 
 
-            logger = MyBarLogger()
+
+
+
+            logger = MyBarLogger(USER_ID=self.telegram_id)
 
 
             name: str = f'{DATA_INPUT}{self.telegram_id}/video_final.mp4'
@@ -147,5 +166,7 @@ class VideoNote:
 
 V = VideoNote(239203155, 22)
 
-r = asyncio.run(V.write_to_disk())
-print(r)
+asyncio.run(V.write_to_disk())
+
+
+

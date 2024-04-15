@@ -25,7 +25,6 @@ async def start():
 
         if TASK:
             for task in TASK:
-                print(task)
                 USER_ID = task[0].id
                 try:
                     print(f'Новая задача от: {task[0].username}')
@@ -43,11 +42,7 @@ async def start():
                     if TYPE == '2':
                         await VIDEONOTE.crop()
                         await VIDEONOTE.add_watermark()
-                        BAR = await VIDEONOTE.write_to_disk()
-                        await BOT.send_message(
-                            chat_id=USER_ID,
-                            text=str(BAR)
-                        )
+                        await VIDEONOTE.write_to_disk()
 
                     if TYPE == '3':
                         await VIDEONOTE.crop()
