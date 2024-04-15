@@ -13,11 +13,11 @@ from aiogram.utils.markdown import hlink
 from aiogram.utils.media_group import MediaGroupBuilder
 from sqlalchemy import insert, select, update, delete
 
-from config import OWNER
-from db.db import DB_SESSION
-from db.tables import Users, Buttons, Data
-from handlers.fsm_states import FSMSTATES
-from utils.Message_with_media import MessageWithMedia
+from BOT.config import OWNER, ROOT_DIR
+from BOT.db.db import DB_SESSION
+from BOT.db.tables import Users, Buttons, Data
+from BOT.handlers.fsm_states import FSMSTATES
+from BOT.utils.Message_with_media import MessageWithMedia
 
 
 
@@ -27,10 +27,10 @@ router = Router()
 async def get_himsg(message: types.Message, state: FSMContext):
     TEXT: str = message.text
 
-    stmt = update(Data).values(hi_message=TEXT)
+    stmt = insert(Data).values(hi_message=TEXT)
     await DB_SESSION.execute(statement=stmt)
     await DB_SESSION.commit()
-    await DB_SESSION.close()
+
 
     keyboard = InlineKeyboardBuilder()
     keyboard.add(InlineKeyboardButton(text="🔸 Белый список", callback_data="admin_whitelist"))
@@ -70,46 +70,49 @@ async def download_audio(message: types.Message, bot: Bot, state: FSMContext):
 async def download_audio(message: types.Message, bot: Bot, state: FSMContext):
     USER_ID: int = message.forward_from.id
 
-    stmt = select(Users).where(Users.id == USER_ID and Users.is_whitelist is True)
+    stmt = select(Users).where(Users.id == USER_ID)
     result = await DB_SESSION.execute(statement=stmt)
     user = result.scalar_one_or_none()
 
-    if user:
-        await bot.delete_message(chat_id=message.from_user.id, message_id=message.message_id)
-        await message.answer(text='⚠ Такой пользователь уже в whitelist.')
-    else:
-        stmt = select(Users).where(Users.id == USER_ID)
-        result = await DB_SESSION.execute(statement=stmt)
-        user = result.scalar_one_or_none()
 
-        if user:
+    if user:
+        if user.is_whitelist:
+            await bot.delete_message(chat_id=message.from_user.id, message_id=message.message_id)
+            await message.answer(text='⚠ Такой пользователь уже в whitelist. Попробуйте ещё:')
+            await state.set_state(FSMSTATES.STEP2_ADD_WHITELIST)
+        else:
             stmt = update(Users).values(is_whitelist=True).where(Users.id == USER_ID)
             await DB_SESSION.execute(statement=stmt)
             await DB_SESSION.commit()
             await DB_SESSION.close()
-        else:
-            stmt = insert(Users).values(
-                id=USER_ID,
-                username=message.forward_from.username,
-                firstname=message.forward_from.first_name,
-                lastname=message.forward_from.last_name,
-                is_whitelist=True
-            )
-            await DB_SESSION.execute(statement=stmt)
-            await DB_SESSION.commit()
-            await DB_SESSION.close()
+
+            await bot.delete_message(chat_id=message.from_user.id, message_id=message.message_id)
+            await message.answer(text='✅ Пользователь добавлен в whitelist.')
+            await state.clear()
+    else:
+        stmt = insert(Users).values(
+            id=USER_ID,
+            username=message.forward_from.username,
+            firstname=message.forward_from.first_name,
+            lastname=message.forward_from.last_name,
+            is_whitelist=True
+        )
+        await DB_SESSION.execute(statement=stmt)
+        await DB_SESSION.commit()
+        await DB_SESSION.close()
 
         await bot.delete_message(chat_id=message.from_user.id, message_id=message.message_id)
         await message.answer(text='✅ Пользователь добавлен в whitelist.')
+        await state.clear()
 
-    await state.clear()
+
 
 @router.message(FSMSTATES.STEP4_SENDMSG)
 async def get_message_to_send(message: types.Message, bot: Bot, state: FSMContext):
     text = message.text
 
     sending_message = MessageWithMedia(text, None)
-    file = open("./data/temp/message_to_send.json", 'w')
+    file = open(ROOT_DIR + "/data/temp/message_to_send.json", 'w')
     file.write(json.dumps(sending_message.__dict__))
     file.close()
 
@@ -164,13 +167,13 @@ async def save_media(message: types.Message, bot: Bot, state: FSMContext):
         print(e)
         return
 
-    file = open("./data/temp/message_to_send.json", 'r')
+    file = open(ROOT_DIR + "/data/temp/message_to_send.json", 'r')
     sending_message = MessageWithMedia(**json.load(file))
     file.close()
     if sending_message.media is None:
         sending_message.media = []
     sending_message.media.append(file_id)
-    file = open("./data/temp/message_to_send.json", 'w')
+    file = open(ROOT_DIR + "/data/temp/message_to_send.json", 'w')
     file.write(json.dumps(sending_message.__dict__))
     file.close()
     a = await message.answer("сохранил")
@@ -208,7 +211,7 @@ async def sending(call: types.CallbackQuery, bot: Bot, state: FSMContext):
 
     await bot.send_message(chat_id=USER_ID, text='начинаю рассылку')
 
-    file = open("./data/temp/message_to_send.json", 'r')
+    file = open(ROOT_DIR + "/data/temp/message_to_send.json", 'r')
     sending_message = MessageWithMedia(**json.load(file))
     file.close()
 
@@ -254,21 +257,34 @@ async def sending(call: types.CallbackQuery, bot: Bot, state: FSMContext):
 
 @router.message(FSMSTATES.STEP8_ADMIN_CHANNEL)
 async def changer(message: types.Message, bot: Bot, state: FSMContext):
-    CHANNEL = message.forward_from_chat.type
+    USER_ID: int = message.chat.id
 
-    if CHANNEL == 'channel':
+    await bot.delete_message(chat_id=USER_ID, message_id=message.message_id)
+
+    try:
+        print(message.forward_from_chat.type)
+    except Exception:
+        await bot.send_message(chat_id=USER_ID, text='❌ Сообщение переслано не из канала.')
+    else:
         CHANNEL_ID: int = message.forward_from_chat.id
+        CHANNEL_TITLE: str = message.forward_from_chat.title
+        INVITE_LINK = await bot.get_chat(CHANNEL_ID)
+        print(INVITE_LINK.invite_link)
+
         stmt = update(Data).values(
-            channel=CHANNEL_ID
+            channel_id=CHANNEL_ID,
+            channel_title=CHANNEL_TITLE
         ).where(Data.id == 1)
         await DB_SESSION.execute(statement=stmt)
         await DB_SESSION.commit()
         await DB_SESSION.close()
 
-    await bot.send_message(chat_id=message.from_user.id,
-                           text=f"теперь я буду просить подписаться на " + hlink(f"{message.forward_from_chat.title}",
-                                                                                 f"{(await bot.get_chat(message.forward_from_chat.id)).invite_link}"))
+        await bot.send_message(chat_id=message.from_user.id,
+                               text=f"✅ Теперь я буду просить подписаться на:\n\n" + hlink(f"{message.forward_from_chat.title}", f"{(INVITE_LINK.invite_link)}"))
+
     await state.clear()
+
+
 
 @router.callback_query(FSMSTATES.STEP9_BUTTONS)
 async def changer(call: CallbackQuery, bot: Bot, state: FSMContext):

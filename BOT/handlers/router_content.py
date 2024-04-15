@@ -9,15 +9,13 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 from pydub import AudioSegment
 from sqlalchemy import update, select
 
-from config import DATA_INPUT
-from db.db import DB_SESSION
-from db.tables import Users
-from handlers.fsm_states import FSMSTATES
+from BOT.config import DATA_INPUT, ROOT_DIR
+from BOT.db.db import DB_SESSION
+from BOT.db.tables import Users
+from BOT.handlers.fsm_states import FSMSTATES
 
 
 router = Router()
-
-
 
 
 @router.callback_query(FSMSTATES.STEP_TASK_MUSIC)
@@ -43,14 +41,7 @@ async def step_task_music(call: CallbackQuery, bot: Bot, state: FSMContext):
     if DATA == 'no':
         await bot.send_message(chat_id=USER_ID, text='⌛ Создаю ваш кружочек...')
 
-        await bot.send_message(chat_id=USER_ID,
-                               text='Чтобы убрать водяной знак нужно подписаться на @volna_telegram или оформить премиум подписку 🆒')
-
         DATA_STATE = await state.get_data()
-
-
-
-        # VIDEONOTE = VideoNote(telegram_id=USER_ID, video_note_time=int(DATA_STATE["video_note_time"]))
 
         if DATA_STATE['round'] is True:
             TASK = {"type": "1", "video_note_time": int(DATA_STATE["video_note_time"])}
@@ -60,21 +51,6 @@ async def step_task_music(call: CallbackQuery, bot: Bot, state: FSMContext):
             await DB_SESSION.commit()
             await DB_SESSION.close()
 
-            # TASK = Task(
-            #     task_type='1',
-            #     telegram_id=USER_ID,
-            #     complete=False,
-            #     video_note_time=int(DATA_STATE["video_note_time"]),
-            #     repeat=1
-            # )
-            #
-            # add_task(task=TASK)
-
-            # await VIDEONOTE.crop()
-            # await VIDEONOTE.compose()
-            # await VIDEONOTE.add_texture()
-            # await VIDEONOTE.add_watermark()
-            # await VIDEONOTE.write_to_disk()
         else:
             TASK = {"type": "2", "video_note_time": int(DATA_STATE["video_note_time"])}
 
@@ -82,40 +58,6 @@ async def step_task_music(call: CallbackQuery, bot: Bot, state: FSMContext):
             await DB_SESSION.execute(statement=stmt)
             await DB_SESSION.commit()
             await DB_SESSION.close()
-
-            # TASK = Task(
-            #     task_type='2',
-            #     telegram_id=USER_ID,
-            #     complete=False,
-            #     video_note_time=int(DATA_STATE["video_note_time"]),
-            #     repeat=1
-            # )
-            #
-            # add_task(task=TASK)
-
-            # await VIDEONOTE.crop()
-            # await VIDEONOTE.add_watermark()
-            # await VIDEONOTE.write_to_disk()
-
-        # stmt = select(Channels).where(Channels.user_id == USER_ID)
-        # result = await DB_SESSION.execute(statement=stmt)
-        # CHANNELS = result.all()
-        #
-        # if CHANNELS:
-        #     keyboard = InlineKeyboardBuilder()
-        #     for channel in CHANNELS:
-        #         keyboard.add(InlineKeyboardButton(text=channel[0].channel_name, callback_data='CHANNEL:' + str(channel[0].id)))
-        #     keyboard.adjust(1)
-        #     await bot.send_video_note(
-        #         chat_id=USER_ID,
-        #         video_note=FSInputFile(DATA_INPUT + str(USER_ID) + '/video_final.mp4'),
-        #         reply_markup=keyboard.as_markup()
-        #     )
-        # else:
-        #     await bot.send_video_note(
-        #         chat_id=USER_ID,
-        #         video_note=FSInputFile(DATA_INPUT + str(USER_ID) + '/video_final.mp4')
-        #     )
 
         await state.clear()
 
@@ -143,13 +85,11 @@ async def get_music(message: types.Message, bot: Bot, state: FSMContext) -> NoRe
                 format="mp3")
         except Exception as e:
             print(e)
-        await bot.send_message(chat_id=USER_ID, text='✅ Получил вашу аудиодорожку.')
 
+        await bot.send_message(chat_id=USER_ID, text='✅ Получил вашу аудиодорожку.')
         await bot.send_message(chat_id=USER_ID, text='⌛ Создаю ваш кружочек...')
 
         DATA_STATE = await state.get_data()
-        # VIDEONOTE = VideoNote(telegram_id=USER_ID, video_note_time=int(DATA_STATE["video_note_time"]))
-
 
         if DATA_STATE["round"] is True:
             TASK = {"type": "3", "video_note_time": int(DATA_STATE["video_note_time"])}
@@ -159,22 +99,6 @@ async def get_music(message: types.Message, bot: Bot, state: FSMContext) -> NoRe
             await DB_SESSION.commit()
             await DB_SESSION.close()
 
-            # TASK = Task(
-            #     task_type='3',
-            #     telegram_id=USER_ID,
-            #     complete=False,
-            #     video_note_time=int(DATA_STATE["video_note_time"]),
-            #     repeat=1
-            # )
-            #
-            # add_task(task=TASK)
-
-            # await VIDEONOTE.crop()
-            # await VIDEONOTE.compose()
-            # await VIDEONOTE.add_texture()
-            # await VIDEONOTE.add_audio()
-            # await VIDEONOTE.add_watermark()
-            # await VIDEONOTE.write_to_disk()
         else:
             TASK = {"type": "4", "video_note_time": int(DATA_STATE["video_note_time"])}
 
@@ -183,43 +107,6 @@ async def get_music(message: types.Message, bot: Bot, state: FSMContext) -> NoRe
             await DB_SESSION.commit()
             await DB_SESSION.close()
 
-            # TASK = Task(
-            #     task_type='4',
-            #     telegram_id=USER_ID,
-            #     complete=False,
-            #     video_note_time=int(DATA_STATE["video_note_time"]),
-            #     repeat=1
-            # )
-            #
-            # add_task(task=TASK)
-
-            # await VIDEONOTE.crop()
-            # await VIDEONOTE.add_audio()
-            # await VIDEONOTE.add_watermark()
-            # await VIDEONOTE.write_to_disk()
-
-        # stmt = select(Channels).where(Channels.user_id == USER_ID)
-        # result = await DB_SESSION.execute(statement=stmt)
-        # CHANNELS = result.all()
-        #
-        # if CHANNELS:
-        #     keyboard = InlineKeyboardBuilder()
-        #     for channel in CHANNELS:
-        #         keyboard.add(InlineKeyboardButton(text=channel[0].channel_name, callback_data='CHANNEL:' + str(channel[0].id)))
-        #     keyboard.adjust(1)
-        #     await bot.send_video_note(
-        #         chat_id=USER_ID,
-        #         video_note=FSInputFile(DATA_INPUT + str(USER_ID) + '/video_final.mp4'),
-        #         reply_markup=keyboard.as_markup()
-        #     )
-        # else:
-        #     await bot.send_video_note(
-        #         chat_id=USER_ID,
-        #         video_note=FSInputFile(DATA_INPUT + str(USER_ID) + '/video_final.mp4')
-        #     )
-
-        await bot.send_message(chat_id=USER_ID,
-                               text='Чтобы убрать водяной знак нужно подписаться на @volna_telegram или оформить премиум подписку 🆒')
         await state.clear()
 
     else:
@@ -335,7 +222,7 @@ async def get_duration(call: CallbackQuery, bot: Bot, state: FSMContext):
         keyboard = InlineKeyboardBuilder()
         keyboard.add(types.InlineKeyboardButton(text="Назад", callback_data="back"))
 
-        gif = FSInputFile("DATA/help_buy_sub.gif")
+        gif = FSInputFile(ROOT_DIR + "/data/help_buy_sub.gif")
         await bot.send_video(chat_id=USER_ID,
                              caption="🆒 Добавление своих обводок и элементов доступно для пользователей с оформленной подпиской.\n\n"
                                      "Для оплаты премиум функции — напишите @oksankazhu\n\n"
@@ -345,14 +232,13 @@ async def get_duration(call: CallbackQuery, bot: Bot, state: FSMContext):
 
         await state.set_state(FSMSTATES.STEP_TASK_TEXTURE)
     if DATA == 'builtin':
-
         keyboard = InlineKeyboardBuilder()
         for i in range(1, 6):
             keyboard.add(InlineKeyboardButton(text=str(i), callback_data=str(i)))
         keyboard.add(types.InlineKeyboardButton(text="Назад", callback_data="back"))
         keyboard.adjust(5, 1)
 
-        photo = FSInputFile("DATA/textures_choose.PNG")
+        photo = FSInputFile(ROOT_DIR + "/data/textures_choose.PNG")
         await bot.send_photo(chat_id=USER_ID, caption="💡 Выберите обводку:", photo=photo,
                              reply_markup=keyboard.as_markup())
 
@@ -370,8 +256,8 @@ async def get_duration(call: CallbackQuery, bot: Bot, state: FSMContext):
         await bot.delete_message(chat_id=USER_ID, message_id=call.message.message_id)
 
         keyboard = InlineKeyboardBuilder()
-        keyboard.add(InlineKeyboardButton(text="Встроенные обводки", callback_data="builtin"))
-        keyboard.add(InlineKeyboardButton(text="Свой дизайн 🆒", callback_data="own"))
+        keyboard.add(InlineKeyboardButton(text="🔘 Встроенные обводки", callback_data="builtin"))
+        keyboard.add(InlineKeyboardButton(text="🆒 Свой дизайн ", callback_data="own"))
         keyboard.add(types.InlineKeyboardButton(text="Назад", callback_data="back"))
         keyboard.adjust(1)
 
@@ -392,9 +278,9 @@ async def get_duration(call: CallbackQuery, bot: Bot, state: FSMContext):
              }
         )
 
-        shutil.copyfile(f'DATA/textures/{DATA}.PNG', f"DATA/input/{USER_ID}/texture.PNG")
+        shutil.copyfile(ROOT_DIR + f'/data/textures/{DATA}.PNG', ROOT_DIR + f"/data/input/{USER_ID}/texture.png")
 
-        photo = FSInputFile("DATA/texture_help.PNG")
+        photo = FSInputFile(ROOT_DIR + "/data/texture_help.PNG")
         await bot.send_photo(chat_id=USER_ID,
                              caption="💡 Пришлите квадратную картинку, цвет или дизайн которой применится к выбранной обводке:",
                              photo=photo
@@ -495,10 +381,6 @@ async def get_video(message: types.Message, bot: Bot, state: FSMContext):
                     "❌ я не могу работать с этим файлом. Я могу скачать файл до 20 мегабайт, а этот файл весит больше")
 
 
-
-
-
-
 @router.message(F.animation)
 async def get_photo(message: types.Message, bot: Bot, state: FSMContext):
     USER_ID: int = message.from_user.id
@@ -554,6 +436,7 @@ async def get_photo(message: types.Message, bot: Bot, state: FSMContext):
     stmt = select(Users.task_status).where(Users.id == USER_ID)
     result = await DB_SESSION.execute(statement=stmt)
     TASK_STATUS = result.scalar()
+
 
     if TASK_STATUS:
         await message.answer(

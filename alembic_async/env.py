@@ -5,7 +5,7 @@ from sqlalchemy.engine import Connection
 
 from alembic import context
 
-from BOT.config import DB_POSTGRES
+from BOT.config import DB_MYSQL_DOCKER
 from BOT.db.db import ENGINE
 from BOT.db.tables import DBModel
 
@@ -44,7 +44,7 @@ def run_migrations_offline() -> None:
     """
 
     context.configure(
-        url=DB_POSTGRES,
+        url=DB_MYSQL_DOCKER,
         target_metadata=target_metadata,
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},

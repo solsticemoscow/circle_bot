@@ -10,8 +10,6 @@ from sqlalchemy import Boolean, String, BigInteger, Integer, ForeignKey, Enum, D
 from sqlalchemy.orm import Mapped, mapped_column, relationship, declarative_base, column_property, ColumnProperty
 
 
-DBModel = declarative_base()
-
 MAP_BOOL = Annotated[Optional[bool], mapped_column(default=False, nullable=True)]
 MAP_STR = Annotated[Optional[str], mapped_column(String(255), nullable=True)]
 MAP_INT = Annotated[Optional[int], mapped_column(nullable=True)]
@@ -19,6 +17,7 @@ MAP_BIGINT = Annotated[Optional[int], mapped_column(BigInteger, nullable=True)]
 MAP_TEXT = Annotated[Optional[Text], mapped_column(sqlalchemy.Text, nullable=True)]
 
 
+DBModel = declarative_base()
 
 class Users(DBModel):
     __tablename__ = 'Users'
@@ -48,7 +47,8 @@ class Data(DBModel):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     hi_message: Mapped[str] = mapped_column(Text, nullable=True)
-    channel: Mapped[int] = mapped_column(BigInteger, nullable=True)
+    channel_id: Mapped[int] = mapped_column(BigInteger, nullable=True)
+    channel_title: Mapped[str] = mapped_column(String(100), nullable=True)
 
 class Buttons(DBModel):
     __tablename__ = 'Buttons'
@@ -67,22 +67,11 @@ class Channels(DBModel):
     channels_to_user = relationship('Users', back_populates='user_to_channels')
 
 
+class Tasks(DBModel):
+    __tablename__ = 'Tasks'
 
-# class Course(DBModel):
-#     __tablename__ = 'Course'
-#
-#     id: Mapped[str] = mapped_column(String(30), primary_key=True)
-#
-#     morning: Mapped[time] = mapped_column(TIME, nullable=True)
-#     evening: Mapped[time] = mapped_column(TIME, nullable=True)
-#
-#     pay: Mapped[bool] = mapped_column(Boolean, nullable=True, default=False)
-#     coupon: Mapped[bool] = mapped_column(Boolean, nullable=True, default=False)
-#     order_id: Mapped[str] = mapped_column(String(30), nullable=True)
-#
-#     user_id: Mapped[int] = mapped_column(ForeignKey('Users.id'), nullable=True)
-#     course_to_user = relationship('User', back_populates='user_to_course')
-#
-#     code_of_item: Mapped[str] = mapped_column(String(100), ForeignKey('Items.code'), nullable=True)
-#     course_to_items = relationship('Items', back_populates='items_to_course')
-#
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    task_type: Mapped[str] = mapped_column(String(100), nullable=True)
+    complete: Mapped[bool] = mapped_column(Boolean, nullable=True, default=False)
+    video_note_time: Mapped[int] = mapped_column(Integer, nullable=True)
+

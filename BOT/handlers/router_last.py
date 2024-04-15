@@ -2,17 +2,18 @@ import os
 
 from sqlalchemy import select
 
-from config import DATA_INPUT
-from db.db import DB_SESSION
-from handlers.fsm_states import FSMSTATES
+from BOT.config import DATA_INPUT
+from BOT.db.db import DB_SESSION
+from BOT.handlers.fsm_states import FSMSTATES
 
 from aiogram import Bot, Router, F
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, InlineKeyboardButton, FSInputFile, Message
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
-from db.tables import Data, Buttons, Channels
-from utils.func_write_to_excel import write_to_excel_whitelist, write_to_excel_all
+from BOT.db.tables import Data, Buttons, Channels
+from BOT.config import ROOT_DIR
+from BOT.utils.func_write_to_excel import write_to_excel_whitelist, write_to_excel_all
 
 router = Router()
 
@@ -62,9 +63,9 @@ async def get_admin_command(call: CallbackQuery, bot: Bot, state: FSMContext):
         try:
             WHITELIST = await write_to_excel_whitelist()
             if WHITELIST:
-                stat_file = FSInputFile('./data/statistics/whitelist.xlsx')
+                stat_file = FSInputFile(ROOT_DIR + '/data/statistics/whitelist.xlsx')
                 await bot.send_document(chat_id=call.from_user.id, document=stat_file, caption="✅ Текущий whitelist. Выберете действие:", reply_markup=keyboard.as_markup())
-                os.remove(f'./data/statistics/whitelist.xlsx')
+                os.remove(ROOT_DIR + f'/data/statistics/whitelist.xlsx')
             else:
                 await call.message.answer(
                     text='⚠ whitelist пуст. Выберете действие:',
@@ -107,6 +108,9 @@ async def get_admin_command(call: CallbackQuery, bot: Bot, state: FSMContext):
         result = await DB_SESSION.execute(statement=stmt)
         TEXT: str = result.scalar_one_or_none()
 
+        if not TEXT:
+            TEXT = 'У вас нету приветственного сообщения.'
+
         keyboard = InlineKeyboardBuilder()
         keyboard.add(InlineKeyboardButton(text="➕ Прислать новое сообщение", callback_data="admin_himsg_add"))
         keyboard.add(InlineKeyboardButton(text="← Назад", callback_data="admin_back"))
@@ -116,7 +120,7 @@ async def get_admin_command(call: CallbackQuery, bot: Bot, state: FSMContext):
     if DATA == 'admin_stat':
         try:
             await write_to_excel_all()
-            stat_file = FSInputFile(f'./data/statistics/stat.xlsx')
+            stat_file = FSInputFile(ROOT_DIR + '/data/statistics/stat.xlsx')
             await bot.send_document(chat_id=call.from_user.id, document=stat_file, caption="✅ Ваш файл статистики.")
             os.remove(f'./data/statistics/stat.xlsx')
         except Exception as e:
@@ -205,9 +209,10 @@ async def get_all_text_msgs(message: Message, bot: Bot, state: FSMContext):
 
 
 
-# @router.message()
-# async def get_all(message: Message, bot: Bot):
-#     await bot.delete_message(message.from_user.id, message.message_id)
+@router.message()
+async def get_all(message: Message, bot: Bot):
+    print(message)
+    await bot.delete_message(message.from_user.id, message.message_id)
 
 
 

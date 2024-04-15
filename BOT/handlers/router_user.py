@@ -4,23 +4,21 @@ from aiogram import types, Router
 from aiogram.fsm.context import FSMContext
 from sqlalchemy import insert, select, delete
 
-from db.db import DB_SESSION
-from db.tables import Channels
-from handlers.fsm_states import FSMSTATES
+from BOT.db.db import DB_SESSION
+from BOT.db.tables import Channels
+from BOT.handlers.fsm_states import FSMSTATES
 
 router = Router()
 
 @router.message(FSMSTATES.STEP13_USER_CHANNEL)
 async def changer(message: types.Message, bot: Bot, state: FSMContext):
-    CHANNEL = None
-    CHANNEL_ID = None
     IS_USER_ADMIN = False
     IS_BOT_ADMIN = False
 
     try:
         CHANNEL = message.forward_from_chat.type
         CHANNEL_ID = message.forward_from_chat.id
-    except Exception as e:
+    except Exception:
         USER_ID: int = message.chat.id
         await bot.send_message(chat_id=USER_ID, text='❌ Сообщение переслано не из канала.')
     else:

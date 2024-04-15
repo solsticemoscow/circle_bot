@@ -8,7 +8,7 @@ from moviepy.video.fx.loop import loop
 from pydub import AudioSegment
 from moviepy.config import change_settings
 
-from config import DATA_INPUT, THREADS
+from BOT.config import DATA_INPUT, ROOT_DIR, THREADS
 
 
 
@@ -19,31 +19,31 @@ class VideoNote:
     video_note_time: int
 
     def __init__(self, telegram_id, video_note_time, repeats=5):
-        if not os.path.exists(f"{DATA_INPUT}{telegram_id}/"):
-            os.makedirs(f"{DATA_INPUT}{telegram_id}/")
+        if not os.path.exists(f"{DATA_INPUT}{telegram_id}"):
+            os.makedirs(f"{DATA_INPUT}{telegram_id}")
 
-        if os.path.exists(f'{DATA_INPUT}/{telegram_id}.mp4'):
-            video = (VideoFileClip(f'{DATA_INPUT}/{telegram_id}.mp4'))
+        if os.path.exists(f'{DATA_INPUT}{telegram_id}/video.mp4'):
+            video = (VideoFileClip(f'{DATA_INPUT}{telegram_id}/video.mp4'))
         else:
-            if f"{telegram_id}.jpg" in os.listdir(f"{DATA_INPUT}"):
-                clips = ImageClip(f"{DATA_INPUT}/{telegram_id}.jpg").set_duration(video_note_time)
+            if "image.jpg" in os.listdir(f"{DATA_INPUT}{telegram_id}/"):
+                clips = ImageClip(f"{DATA_INPUT}{telegram_id}/image.jpg").set_duration(video_note_time)
                 self.video_note_time = video_note_time
             else:
-                clips = VideoFileClip(f"{DATA_INPUT}animation.gif")
+                clips = VideoFileClip(f"{DATA_INPUT}{telegram_id}/animation.gif")
                 clips = loop(clips, n=repeats)
 
                 self.video_note_time = clips.duration
             video = clips
 
         audio = None
-        if os.path.exists(f'{DATA_INPUT}/{telegram_id}.mp3'):
-            raw_audio = AudioSegment.from_file(f'{DATA_INPUT}/{telegram_id}.mp3')
+        if os.path.exists(f'{DATA_INPUT}{telegram_id}/music.mp3'):
+            raw_audio = AudioSegment.from_file(f'{DATA_INPUT}{telegram_id}/music.mp3')
             raw_audio_len = raw_audio.duration_seconds
             silence = AudioSegment.silent(max(0, (10 - raw_audio_len) * 1000))
             combined_audio = raw_audio + silence
-            combined_audio.export(f'{DATA_INPUT}/audio_proc.mp3', format='mp3')
+            combined_audio.export(f'{DATA_INPUT}{telegram_id}/audio_proc.mp3', format='mp3')
 
-            audio = AudioFileClip(f'{DATA_INPUT}/audio_proc.mp3')
+            audio = AudioFileClip(f'{DATA_INPUT}{telegram_id}/audio_proc.mp3')
         video = video.set_duration(video.duration)
         self.video = video
         self.audio = audio
@@ -51,10 +51,9 @@ class VideoNote:
         self.video_note_time = video.duration
 
         self.texture = None
-        for i in os.listdir(f"{DATA_INPUT}"):
+        for i in os.listdir(f"{DATA_INPUT}{telegram_id}"):
             if "texture" in i:
-                texture = i
-                self.texture = ImageClip(f'{DATA_INPUT}{texture}').set_duration(self.video.duration).resize(width=640)
+                self.texture = ImageClip(f'{DATA_INPUT}{telegram_id}/texture.png').set_duration(self.video.duration).resize(width=640)
 
 
     async def compose(self):
@@ -80,10 +79,8 @@ class VideoNote:
 
     async def add_audio(self):
         audio = self.audio
-
         video_note = self.video.set_audio(audio)
         video_note = video_note.set_duration(self.video_note_time)
-
         self.video = video_note
 
 
@@ -110,7 +107,7 @@ class VideoNote:
         await VideoNote.add_effect(self, self.texture)
 
     async def add_watermark(self):
-        watermark = ImageClip(img='DATA/video_round_bot.png').set_duration(self.video.duration).resize(width=640)
+        watermark = ImageClip(img=ROOT_DIR + '/data/video_round_bot.png').set_duration(self.video.duration).resize(width=640)
         await VideoNote.add_effect(self, watermark)
 
     async def write_to_disk(self):
@@ -126,10 +123,10 @@ class VideoNote:
                                        fps=30,
                                        bitrate=f"{bitrate}k",
                                        audio_bitrate="256k",
-                                       codec="libx264", ffmpeg_params=["-tune", "film"]
+                                       codec="libx264",
+                                       ffmpeg_params=["-tune", "film"]
                                        )
             return 'Задача успешно завершилась!'
         except Exception as e:
             return e
-
 

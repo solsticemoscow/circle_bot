@@ -2,14 +2,15 @@
 import xlsxwriter
 from sqlalchemy import select
 
-from db.db import DB_SESSION
-from db.tables import Users
+from BOT.config import ROOT_DIR
+from BOT.db.db import DB_SESSION
+from BOT.db.tables import Users
 
 
 
 async def write_to_excel_all():
 
-    workbook = xlsxwriter.Workbook(filename='./data/statistics/stat.xlsx')
+    workbook = xlsxwriter.Workbook(filename=ROOT_DIR + '/data/statistics/stat.xlsx')
     worksheet = workbook.add_worksheet()
 
     stmt = select(Users)
@@ -73,7 +74,7 @@ async def write_to_excel_all():
 
 async def write_to_excel_whitelist():
 
-    workbook = xlsxwriter.Workbook(filename='./data/statistics/whitelist.xlsx')
+    workbook = xlsxwriter.Workbook(filename=ROOT_DIR + '/data/statistics/whitelist.xlsx')
     worksheet = workbook.add_worksheet()
 
     stmt = select(Users).where(Users.is_whitelist)

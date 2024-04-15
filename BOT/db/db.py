@@ -1,14 +1,13 @@
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
+from BOT.config import DB_MYSQL_DOCKER
 
-from config import DB_POSTGRES
 
 ENGINE = create_async_engine(
-    DB_POSTGRES,
+    DB_MYSQL_DOCKER,
     echo=True,
     pool_pre_ping=True
 )
 
-async_session = async_sessionmaker(ENGINE, autoflush=False, expire_on_commit=True)
-
+async_session = async_sessionmaker(ENGINE, autoflush=True, expire_on_commit=False)
 DB_SESSION = async_session()
 
