@@ -31,7 +31,8 @@ BOT = 7139724856
 TAG: str = '1'
 
 
-THREADS: int = max(multiprocessing.cpu_count() - 2, 1)
+THREADS: int = multiprocessing.cpu_count()
+
 
 
 

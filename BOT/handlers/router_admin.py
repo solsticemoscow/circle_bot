@@ -105,8 +105,6 @@ async def download_audio(message: types.Message, bot: Bot, state: FSMContext):
         await message.answer(text='✅ Пользователь добавлен в whitelist.')
         await state.clear()
 
-
-
 @router.message(FSMSTATES.STEP4_SENDMSG)
 async def get_message_to_send(message: types.Message, bot: Bot, state: FSMContext):
     text = message.text
@@ -126,7 +124,6 @@ async def get_message_to_send(message: types.Message, bot: Bot, state: FSMContex
     await a.edit_text("💡 Вы хотите добавить медиа (фото или видео) в рассылку?", reply_markup=keyboard.as_markup())
     await state.set_state(FSMSTATES.STEP5_SENDMSG_MEDIA)
 
-
 @router.callback_query(FSMSTATES.STEP5_SENDMSG_MEDIA)
 async def ask_for_media(call: CallbackQuery, bot: Bot, state: FSMContext):
     await call.answer()
@@ -134,7 +131,7 @@ async def ask_for_media(call: CallbackQuery, bot: Bot, state: FSMContext):
 
     if DATA == 'yes':
         await call.message.answer(
-            "Пришлите одно медиа (видео или фото), я его добавлю и потом спрошу хотите ли добавить еще")
+            "📌 Пришлите одно медиа (видео или фото), я его добавлю и потом спрошу хотите ли добавить еще:")
         await call.message.delete()
         await state.set_state(FSMSTATES.STEP6_SENDMSG_MEDIA2)
     if DATA == 'no':
@@ -145,12 +142,10 @@ async def ask_for_media(call: CallbackQuery, bot: Bot, state: FSMContext):
         keyboard.add(InlineKeyboardButton(text='всем пользователям', callback_data='send_all'))
         keyboard.adjust(1)
 
-        await bot.send_message(chat_id=call.from_user.id, text='выберите какой группе пользователей '
-                                                               'отослать и я сделаю рассылку :)',
+        await bot.send_message(chat_id=call.from_user.id, text='📌 выберите какой группе пользователей '
+                                                               'отослать и я сделаю рассылку:',
                                reply_markup=keyboard.as_markup())
         await state.set_state(FSMSTATES.STEP7_SENDMSG_GROUP)
-
-
 
 @router.message(FSMSTATES.STEP6_SENDMSG_MEDIA2)
 async def save_media(message: types.Message, bot: Bot, state: FSMContext):
@@ -162,7 +157,7 @@ async def save_media(message: types.Message, bot: Bot, state: FSMContext):
     try:
         await bot.get_file(file_id)
     except Exception as e:
-        await message.answer("я не могу скачать этот файл, он превышает 20 мб, попробуйте снова или нажмите чтобы "
+        await message.answer("❌ Я не могу скачать этот файл, он превышает 20 мб, попробуйте снова или нажмите чтобы "
                              "выйти из текущего состояния")
         print(e)
         return
@@ -183,8 +178,6 @@ async def save_media(message: types.Message, bot: Bot, state: FSMContext):
 
     await a.edit_text("💡 Вы хотите добавить медиа (фото или видео) в рассылку?", reply_markup=keyboard.as_markup())
     await state.set_state(FSMSTATES.STEP5_SENDMSG_MEDIA)
-
-
 
 @router.callback_query(FSMSTATES.STEP7_SENDMSG_GROUP)
 async def sending(call: types.CallbackQuery, bot: Bot, state: FSMContext):
@@ -253,8 +246,6 @@ async def sending(call: types.CallbackQuery, bot: Bot, state: FSMContext):
     await bot.send_message(chat_id=call.from_user.id, text="✅ Готово!")
     await state.clear()
 
-
-
 @router.message(FSMSTATES.STEP8_ADMIN_CHANNEL)
 async def changer(message: types.Message, bot: Bot, state: FSMContext):
     USER_ID: int = message.chat.id
@@ -283,8 +274,6 @@ async def changer(message: types.Message, bot: Bot, state: FSMContext):
                                text=f"✅ Теперь я буду просить подписаться на:\n\n" + hlink(f"{message.forward_from_chat.title}", f"{(INVITE_LINK.invite_link)}"))
 
     await state.clear()
-
-
 
 @router.callback_query(FSMSTATES.STEP9_BUTTONS)
 async def changer(call: CallbackQuery, bot: Bot, state: FSMContext):
@@ -401,7 +390,7 @@ async def download_audio(message: types.Message, bot: Bot, state: FSMContext):
 
     if DATA:
         for button in DATA:
-            TEXT += f'<i>Имя</i>: {button[0].button_name}\n'
+            TEXT += f'<i>Имя кнопки</i>: {button[0].button_name}\n'
 
     keyboard.add(InlineKeyboardButton(text="← Назад", callback_data="admin_back"))
     keyboard.adjust(1)
@@ -413,7 +402,6 @@ async def download_audio(message: types.Message, bot: Bot, state: FSMContext):
     )
 
     await state.set_state(FSMSTATES.STEP9_BUTTONS)
-
 
 @router.message(FSMSTATES.STEP11_BUTTONS_REMOVE)
 async def changer(message: types.Message, bot: Bot, state: FSMContext):
@@ -441,7 +429,7 @@ async def changer(message: types.Message, bot: Bot, state: FSMContext):
 
         if DATA:
             for button in DATA:
-                TEXT += f'<i>Имя</i>: {button[0].button_name}\n'
+                TEXT += f'<i>Имя кнопки</i>: {button[0].button_name}\n'
 
         keyboard.add(types.InlineKeyboardButton(text="← Назад", callback_data="admin_back"))
         keyboard.adjust(1)
@@ -456,7 +444,7 @@ async def changer(message: types.Message, bot: Bot, state: FSMContext):
         keyboard = InlineKeyboardBuilder()
         keyboard.add(InlineKeyboardButton(text="← Назад", callback_data="admin_back"))
 
-        await message.answer(text='Такой кнопки не найдено! Попробуйте ещё:', reply_markup=keyboard.as_markup())
+        await message.answer(text='❌ Такой кнопки не найдено! Попробуйте ещё:', reply_markup=keyboard.as_markup())
         await state.set_state(FSMSTATES.STEP11_BUTTONS_REMOVE)
 
 

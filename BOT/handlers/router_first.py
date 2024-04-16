@@ -16,7 +16,7 @@ from BOT.config import OWNER, DANIEL, DATA_INPUT
 
 
 from BOT.db.db import DB_SESSION
-from BOT.db.tables import Users, Buttons, Data
+from BOT.db.tables import Users, Buttons, Data, Tasks
 
 from BOT.handlers.router_admin import router as router_admin
 from BOT.handlers.router_user import router as router_user
@@ -52,6 +52,23 @@ async def get_start(message: Message, bot: Bot, state: FSMContext):
     except IntegrityError as e:
         print(e)
 
+    await bot.unpin_all_chat_messages(chat_id=message.from_user.id)
+
+    TEXT = (f'🖐 Привет, <b>{USERNAME}</b>!\n\nЭтот бот поможет сконвертировать твои медиа файлы в крутые кружочки Телеграм.\n\n'
+            'Фишки бота: \n\n'
+            '✦ создание видеосообщений из фото, gif и видео до минуты\n'
+            '✦ максимально возможное сохранение качества\n'
+            '✦ добавление своей музыки\n'
+            '✦ возможность постинга сразу на канал\n'
+            '🆕 встроенные шаблоны обводок с вашим дизайном (цветом или текстурой)\n\n'
+            ' ⤷ Основной функционал в подарок подписчикам канала @volna_telegram. Там же будут все инструкции и полезные материалы для красивых кружочков.')
+
+    keyboard = InlineKeyboardBuilder()
+    keyboard.add(InlineKeyboardButton(text="👉 Инструкция", url="https://t.me/volna_telegram/6"))
+
+    MSG = await message.answer(text=TEXT, reply_markup=keyboard.as_markup(resize_keyboard=True))
+    await bot.pin_chat_message(chat_id=message.from_user.id, message_id=MSG.message_id, disable_notification=True)
+
     keyboard = ReplyKeyboardBuilder()
     keyboard.row(KeyboardButton(text='⚡️Постинг на канал'))
     keyboard.adjust(1, 1)
@@ -64,12 +81,9 @@ async def get_start(message: Message, bot: Bot, state: FSMContext):
         for button in DATA:
             keyboard.row(KeyboardButton(text=button[0].button_name))
             keyboard.adjust(1, 1)
+    await message.answer(text='📎 Присылай фото, gif или видео до минуты и жди видеосообщение в ответ.', reply_markup=keyboard.as_markup(resize_keyboard=True))
 
-    await message.answer(text='🤖 Вас приветствует бот!', reply_markup=keyboard.as_markup(resize_keyboard=True))
-    await message.answer(text='📎 Присылай фото, gif или видео до минуты и жди видеосообщение в ответ.')
     await bot.delete_message(chat_id=USER_ID, message_id=message.message_id)
-
-    await bot.unpin_all_chat_messages(chat_id=message.from_user.id)
 
     stmt = select(Data.hi_message)
     result = await DB_SESSION.execute(statement=stmt)
@@ -87,15 +101,9 @@ async def get_start(message: Message, bot: Bot, state: FSMContext):
         )
         await state.set_state(FSMSTATES.STEP1_EDIT_HIMSG)
     else:
-        keyboard = InlineKeyboardBuilder()
-        keyboard.add(InlineKeyboardButton(text="👉 Инструкция", url="https://t.me/volna_telegram/6"))
-
-        MSG_ID = await message.answer(
-            text=TEXT,
-            reply_markup=keyboard.as_markup()
+        await message.answer(
+            text=TEXT
         )
-
-        await bot.pin_chat_message(chat_id=message.from_user.id, message_id=MSG_ID.message_id)
         await state.clear()
 
 
@@ -152,8 +160,13 @@ async def command_start(message: Message, bot: Bot):
     CODE = ''.join(random.choices(string.ascii_letters, k=8))
 
     try:
-        if not os.path.exists(f"{DATA_INPUT}{USER_ID}/"):
-            os.makedirs(f"{DATA_INPUT}{USER_ID}/")
+        stmt = select(Tasks)
+        result = await DB_SESSION.execute(statement=stmt)
+        TASKS = result.all()
+
+        for task in TASKS:
+            print(task[0].id)
+
     except Exception as e:
         await bot.send_message(
             chat_id=USER_ID,

@@ -4,7 +4,7 @@ from BOT.config import DB_MYSQL_DOCKER
 
 ENGINE = create_async_engine(
     DB_MYSQL_DOCKER,
-    echo=True,
+    echo=False,
     pool_pre_ping=True
 )
 

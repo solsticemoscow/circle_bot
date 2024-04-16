@@ -1,8 +1,12 @@
 import os
 
+import telebot
+from aiogram.types import ContentType
+
+from aiogram.handlers import ErrorHandler
 from sqlalchemy import select
 
-from BOT.config import DATA_INPUT
+from BOT.config import DATA_INPUT, TOKEN, OWNER
 from BOT.db.db import DB_SESSION
 from BOT.handlers.fsm_states import FSMSTATES
 
@@ -17,9 +21,6 @@ from BOT.utils.func_write_to_excel import write_to_excel_whitelist, write_to_exc
 
 router = Router()
 
-
-
-
 @router.callback_query()
 async def get_admin_command(call: CallbackQuery, bot: Bot, state: FSMContext):
     await call.answer()
@@ -29,7 +30,6 @@ async def get_admin_command(call: CallbackQuery, bot: Bot, state: FSMContext):
 
     if DATA.startswith('CHANNEL:'):
         CHANNEL_ID = int(DATA.replace('CHANNEL:', ''))
-        print(CHANNEL_ID)
 
         await bot.send_video_note(
             chat_id=CHANNEL_ID,
@@ -41,17 +41,14 @@ async def get_admin_command(call: CallbackQuery, bot: Bot, state: FSMContext):
             text=f'✅ Видеокружок успешно переслан в канал: {CHANNEL_ID}')
 
     if DATA == 'channel_add':
-        await call.message.answer(text="Добавьте бота в канал и перешлите cообщение из"
-                                                               " канала для изменения привязки.")
+        await call.message.answer(text="<i>💡 Добавьте бота в канал и перешлите cообщение из канала для изменения привязки:</i>")
         await state.set_state(FSMSTATES.STEP13_USER_CHANNEL)
     if DATA == 'channel_remove':
-        await call.message.answer(text="Добавьте бота в канал и перешлите cообщение из"
-                                                               " канала для изменения привязки.")
+        await call.message.answer(text="<i>💡 Добавьте бота в канал и перешлите cообщение из канала для изменения привязки:</i>")
         await state.set_state(FSMSTATES.STEP13_USER_CHANNEL)
 
     if DATA == 'admin_channel':
-        await bot.send_message(chat_id=call.from_user.id, text="Добавьте бота в канал и перешлите cообщение из"
-                                                               " канала для изменения привязки.")
+        await bot.send_message(chat_id=call.from_user.id, text="<i>💡 Добавьте бота в канал и перешлите cообщение из канала для изменения привязки:</i>")
         await state.set_state(FSMSTATES.STEP8_ADMIN_CHANNEL)
     if DATA == 'admin_whitelist':
 
@@ -109,7 +106,7 @@ async def get_admin_command(call: CallbackQuery, bot: Bot, state: FSMContext):
         TEXT: str = result.scalar_one_or_none()
 
         if not TEXT:
-            TEXT = 'У вас нету приветственного сообщения.'
+            TEXT = '⚠ У вас нету приветственного сообщения.'
 
         keyboard = InlineKeyboardBuilder()
         keyboard.add(InlineKeyboardButton(text="➕ Прислать новое сообщение", callback_data="admin_himsg_add"))
@@ -172,6 +169,7 @@ async def get_admin_command(call: CallbackQuery, bot: Bot, state: FSMContext):
         await state.set_state(FSMSTATES.STEP4_SENDMSG)
 
 
+
 @router.message(F.text)
 async def get_all_text_msgs(message: Message, bot: Bot, state: FSMContext):
     USER_ID: int = message.from_user.id
@@ -208,11 +206,17 @@ async def get_all_text_msgs(message: Message, bot: Bot, state: FSMContext):
                 await message.answer(text=button[0].button_text)
 
 
-
-# @router.message()
-# async def get_all(message: Message, bot: Bot):
-#     print(message)
-#     await bot.delete_message(message.from_user.id, message.message_id)
+@router.message(F.content_type == ContentType.PINNED_MESSAGE)
+async def get_all(message: Message, bot: Bot):
+    await bot.delete_message(chat_id=message.chat.id, message_id=message.message_id)
 
 
+
+
+@router.errors()
+class MyHandler(ErrorHandler):
+    async def handle(self):
+        bot = telebot.TeleBot(TOKEN)
+        print(self.exception_name, self.exception_message)
+        bot.send_message(chat_id=OWNER, text=f'<i>⚠ Ошибка бота {self.exception_name}:</i> {self.exception_message}')
 

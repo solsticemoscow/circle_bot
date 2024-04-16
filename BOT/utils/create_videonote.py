@@ -1,8 +1,8 @@
 
 from typing import Union
 
-import requests
 from PIL import Image
+
 
 from moviepy.editor import *
 from moviepy.video.fx.crop import crop
@@ -12,8 +12,9 @@ from pydub import AudioSegment
 from moviepy.config import change_settings
 
 from BOT.config import DATA_INPUT, ROOT_DIR, THREADS, TOKEN
+import telebot
 
-
+FILE = None
 
 class VideoNote:
     video: Union[VideoClip, None]
@@ -22,8 +23,6 @@ class VideoNote:
     video_note_time: int
 
     def __init__(self, telegram_id, video_note_time, repeats=5):
-        self.telegram_id = telegram_id
-
         if not os.path.exists(f"{DATA_INPUT}{telegram_id}"):
             os.makedirs(f"{DATA_INPUT}{telegram_id}")
 
@@ -52,6 +51,7 @@ class VideoNote:
         video = video.set_duration(video.duration)
         self.video = video
         self.audio = audio
+        self.telegram_id = telegram_id
         self.video_note_time = video.duration
 
         self.texture = None
@@ -116,35 +116,21 @@ class VideoNote:
 
     async def write_to_disk(self):
         try:
-            # class MyBarLogger(ProgressBarLogger):
-            #
-            #     def __init__(self, USER_ID, MSG_ID):
-            #         super().__init__()
-            #         self.USER_ID = USER_ID
-            #         self.MSG_ID = MSG_ID
-            #
-            #
-            #     def callback(self, **changes):
-            #         for (parameter, value) in changes.items():
-            #             print('Parameter %s is now %s' % (parameter, value))
-            #
-            #     def bars_callback(self, bar, attr, value, old_value=None):
-            #         percentage = (value / self.bars[bar]['total']) * 100
-            #
-            #         if percentage == 25:
-            #             requests.get(f"https://api.telegram.org/bot{TOKEN}/editMessage?message_id={self.MSG_ID}&chat_id={self.USER_ID}&text=⌛️ Создаю ваш кружочек...готово на {str(round(percentage))}%")
-            #         if percentage == 50:
-            #             requests.get(f"https://api.telegram.org/bot{TOKEN}/editMessage?message_id={self.MSG_ID}&chat_id={self.USER_ID}&text=⌛️ Создаю ваш кружочек...готово на {str(round(percentage))}%")
-            #         if percentage == 75:
-            #             requests.get(f"https://api.telegram.org/bot{TOKEN}/editMessage?message_id={self.MSG_ID}&chat_id={self.USER_ID}&text=⌛️ Создаю ваш кружочек...готово на {str(round(percentage))}%")
-            #
-            #
-            # logger = MyBarLogger(USER_ID=self.telegram_id, MSG_ID=self.msg_id)
+            class MyBarLogger(ProgressBarLogger):
 
+                def callback(self, **changes):
+                    for (parameter, value) in changes.items():
+                        pass
+
+                # def bars_callback(self, bar, attr, value, old_value=None):
+                #     percentage = round((value / self.bars[bar]['total']) * 100)
+                #     print(percentage)
+
+
+            logger = MyBarLogger()
 
             name: str = f'{DATA_INPUT}{self.telegram_id}/video_final.mp4'
             self.video = self.video.set_duration(min(self.video.duration, 59))
-
             bitrate = (8 * (10 * 1024)) / self.video.duration - 256 - 2
 
             return self.video.write_videofile(name,
@@ -152,10 +138,15 @@ class VideoNote:
                                        preset="medium",
                                        fps=30,
                                        bitrate=f"{bitrate}k",
-                                       audio_bitrate="256k",
+                                       audio_bitrate="128k",
                                        codec="libx264",
-                                       ffmpeg_params=["-tune", "film"]
+                                       ffmpeg_params=["-tune", "film"],
+                                       # logger=logger
                                        )
         except Exception as e:
             return e
+
+
+
+
 

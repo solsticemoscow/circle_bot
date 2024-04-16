@@ -7,11 +7,11 @@ from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, InlineKeyboardButton, FSInputFile
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from pydub import AudioSegment
-from sqlalchemy import update, select
+from sqlalchemy import update, select, insert
 
 from BOT.config import DATA_INPUT, ROOT_DIR
 from BOT.db.db import DB_SESSION
-from BOT.db.tables import Users
+from BOT.db.tables import Users, Tasks
 from BOT.handlers.fsm_states import FSMSTATES
 
 
@@ -39,31 +39,43 @@ async def step_task_music(call: CallbackQuery, bot: Bot, state: FSMContext):
         )
         await state.set_state(FSMSTATES.STEP_TASK_MUSIC_GET)
     if DATA == 'no':
-        MSG = await bot.send_message(chat_id=USER_ID, text='⌛ Создаю ваш кружочек...')
+
+        stmt = select(Tasks)
+        result = await DB_SESSION.execute(statement=stmt)
+        TASKS = result.all()
+        await DB_SESSION.close()
+
+        if TASKS:
+            LEN: int = len(TASKS)
+            print(f'Длина очереди: {LEN}')
+            if LEN >= 1:
+                await bot.send_message(chat_id=USER_ID, text=f'⌚ Ваша задача в очереди: {LEN + 1}\n\n'
+                                                             f'Ожидайте...')
 
         DATA_STATE = await state.get_data()
 
         if DATA_STATE['round'] is True:
-            TASK = {"type": "1", "msg_id": MSG.message_id, "video_note_time": int(DATA_STATE["video_note_time"])}
 
-            stmt = update(Users).values(task_status=True, task=TASK).where(Users.id == USER_ID)
+            stmt = insert(Tasks).values(
+                video_note_time=int(DATA_STATE["video_note_time"]),
+                user_id=USER_ID,
+                task_type='1'
+            )
             await DB_SESSION.execute(statement=stmt)
             await DB_SESSION.commit()
             await DB_SESSION.close()
 
         else:
-            TASK = {"type": "2", "msg_id": MSG.message_id, "video_note_time": int(DATA_STATE["video_note_time"])}
-
-            stmt = update(Users).values(task_status=True, task=TASK).where(Users.id == USER_ID)
+            stmt = insert(Tasks).values(
+                video_note_time=int(DATA_STATE["video_note_time"]),
+                user_id=USER_ID,
+                task_type='2'
+            )
             await DB_SESSION.execute(statement=stmt)
             await DB_SESSION.commit()
             await DB_SESSION.close()
 
         await state.clear()
-
-
-
-
 
 @router.message(FSMSTATES.STEP_TASK_MUSIC_GET)
 async def get_music(message: types.Message, bot: Bot, state: FSMContext) -> NoReturn:
@@ -87,22 +99,36 @@ async def get_music(message: types.Message, bot: Bot, state: FSMContext) -> NoRe
             print(e)
 
         await bot.send_message(chat_id=USER_ID, text='✅ Получил вашу аудиодорожку.')
-        await bot.send_message(chat_id=USER_ID, text='⌛ Создаю ваш кружочек...')
 
+        stmt = select(Tasks)
+        result = await DB_SESSION.execute(statement=stmt)
+        TASKS = result.all()
+        await DB_SESSION.close()
+
+        if TASKS:
+            LEN: int = len(TASKS)
+            print(f'Длина очереди: {LEN}')
+            if LEN >= 1:
+                await bot.send_message(chat_id=USER_ID, text=f'⌚ Ваша задача в очереди: {LEN + 1}\n\n'
+                                                             f'Ожидайте...')
         DATA_STATE = await state.get_data()
 
         if DATA_STATE["round"] is True:
-            TASK = {"type": "3", "video_note_time": int(DATA_STATE["video_note_time"])}
-
-            stmt = update(Users).values(task_status=True, task=TASK).where(Users.id == USER_ID)
+            stmt = insert(Tasks).values(
+                video_note_time=int(DATA_STATE["video_note_time"]),
+                user_id=USER_ID,
+                task_type='3'
+            )
             await DB_SESSION.execute(statement=stmt)
             await DB_SESSION.commit()
             await DB_SESSION.close()
 
         else:
-            TASK = {"type": "4", "video_note_time": int(DATA_STATE["video_note_time"])}
-
-            stmt = update(Users).values(task_status=True, task=TASK).where(Users.id == USER_ID)
+            stmt = insert(Tasks).values(
+                video_note_time=int(DATA_STATE["video_note_time"]),
+                user_id=USER_ID,
+                task_type='4'
+            )
             await DB_SESSION.execute(statement=stmt)
             await DB_SESSION.commit()
             await DB_SESSION.close()
@@ -115,7 +141,6 @@ async def get_music(message: types.Message, bot: Bot, state: FSMContext) -> NoRe
             text="⚠ Вы прислали не аудио файл! Попробуйте заново:"
         )
         await state.set_state(FSMSTATES.STEP_TASK_MUSIC_GET)
-
 
 
 @router.callback_query(FSMSTATES.STEP_TASK_DURATION)
@@ -188,8 +213,6 @@ async def get_duration(call: CallbackQuery, bot: Bot, state: FSMContext):
                                reply_markup=keyboard.as_markup())
 
         await state.set_state(FSMSTATES.STEP_TASK_MUSIC)
-
-
 
 
 @router.callback_query(FSMSTATES.STEP_TASK_ROUND_QA)
@@ -289,8 +312,6 @@ async def get_duration(call: CallbackQuery, bot: Bot, state: FSMContext):
         await state.set_state(FSMSTATES.STEP_TASK_ROUND_IMAGE)
 
 
-
-
 @router.message(FSMSTATES.STEP_TASK_ROUND_IMAGE)
 async def get_shape(message: types.Message, bot: Bot, state: FSMContext):
     USER_ID: int = message.from_user.id
@@ -335,11 +356,12 @@ async def get_shape(message: types.Message, bot: Bot, state: FSMContext):
 async def get_video(message: types.Message, bot: Bot, state: FSMContext):
     USER_ID: int = message.from_user.id
 
-    stmt = select(Users.task_status).where(Users.id == USER_ID)
+    stmt = select(Tasks).where(Tasks.user_id == USER_ID)
     result = await DB_SESSION.execute(statement=stmt)
-    TASK_STATUS = result.scalar()
+    TASK = result.scalar_one_or_none()
 
-    if TASK_STATUS:
+
+    if TASK:
         await message.answer(
             "⚠ У вас в обработке есть задание. Дождитесь его выполнения и присылайте новые файлы.")
     else:
@@ -385,11 +407,12 @@ async def get_video(message: types.Message, bot: Bot, state: FSMContext):
 async def get_photo(message: types.Message, bot: Bot, state: FSMContext):
     USER_ID: int = message.from_user.id
 
-    stmt = select(Users.task_status).where(Users.id == USER_ID)
+    stmt = select(Tasks).where(Tasks.user_id == USER_ID)
     result = await DB_SESSION.execute(statement=stmt)
-    TASK_STATUS = result.scalar()
+    TASK = result.scalar_one_or_none()
 
-    if TASK_STATUS:
+
+    if TASK:
         await message.answer(
             "⚠ У вас в обработке есть задание. Дождитесь его выполнения и присылайте новые файлы.")
     else:
@@ -427,18 +450,16 @@ async def get_photo(message: types.Message, bot: Bot, state: FSMContext):
         await state.set_state(FSMSTATES.STEP_TASK_DURATION)
 
 
-
-
 @router.message(F.photo)
 async def get_photo(message: types.Message, bot: Bot, state: FSMContext):
     USER_ID: int = message.from_user.id
 
-    stmt = select(Users.task_status).where(Users.id == USER_ID)
+    stmt = select(Tasks).where(Tasks.user_id == USER_ID)
     result = await DB_SESSION.execute(statement=stmt)
-    TASK_STATUS = result.scalar()
+    TASK = result.scalar_one_or_none()
 
 
-    if TASK_STATUS:
+    if TASK:
         await message.answer(
             "⚠ У вас в обработке есть задание. Дождитесь его выполнения и присылайте новые файлы.")
     else:

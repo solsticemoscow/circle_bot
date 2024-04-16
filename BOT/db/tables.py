@@ -1,4 +1,4 @@
-
+import datetime
 import json
 
 from typing import Annotated, Optional
@@ -36,11 +36,8 @@ class Users(DBModel):
     is_premium: Mapped[bool] = mapped_column(Boolean, nullable=True, default=False)
     is_subs: Mapped[bool] = mapped_column(Boolean, nullable=True, default=False)
 
-    task_status: Mapped[bool] = mapped_column(Boolean, nullable=True, default=False)
-    task: Mapped[json] = mapped_column(JSON, nullable=True, default=None)
-
     user_to_channels = relationship('Channels', back_populates='channels_to_user')
-
+    user_to_tasks = relationship('Tasks', back_populates='tasks_to_user')
 
 class Data(DBModel):
     __tablename__ = 'Data'
@@ -70,8 +67,13 @@ class Channels(DBModel):
 class Tasks(DBModel):
     __tablename__ = 'Tasks'
 
-    id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
     task_type: Mapped[str] = mapped_column(String(100), nullable=True)
-    complete: Mapped[bool] = mapped_column(Boolean, nullable=True, default=False)
     video_note_time: Mapped[int] = mapped_column(Integer, nullable=True)
+
+    user_id: Mapped[int] = mapped_column(ForeignKey('Users.id'), nullable=True)
+    tasks_to_user = relationship('Users', back_populates='user_to_tasks')
+
+
+
 

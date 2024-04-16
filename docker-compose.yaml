@@ -6,44 +6,44 @@ name: circle-apps
 
 services:
 
-  circle-bot:
-    container_name: circle-bot
-    restart: on-failure
-    build:
-      context: .
-      dockerfile: Dockerfile
-    volumes:
-      - ./BOT/data:/code/BOT/data
-    entrypoint: ["python3", "app_bot.py"]
-    ports:
-      - 8873:8873
-
-
-  circle-tasker:
-    container_name: circle-tasker
-    restart: on-failure
-    build:
-      context: .
-      dockerfile: Dockerfile
-    volumes:
-      - ./BOT/data:/code/BOT/data
-    entrypoint: ["python3", "app_task_manager.py"]
-    ports:
-      - 8872:8872
-
-
-#  circle-mysql_db:
-#    container_name: circle-mysql_db
-#    image: mysql:8
-#    restart: always
-#    command: --default-authentication-plugin=mysql_native_password
-#    ports:
-#      - "3306:3306"
-#    environment:
-#      MYSQL_ROOT_PASSWORD: secret
-#      MYSQL_DATABASE: DB
-#      MYSQL_USER: example
-#      MYSQL_PASSWORD: secret2
+#  circle-bot:
+#    container_name: circle-bot
+#    restart: on-failure
+#    build:
+#      context: .
+#      dockerfile: Dockerfile
 #    volumes:
-#      - ./BOT/db/dbdata:/var/lib/mysql/
+#      - ./BOT/data:/code/BOT/data
+#    entrypoint: ["python3", "app_bot.py"]
+#    ports:
+#      - 8873:8873
+#
+#
+#  circle-tasker:
+#    container_name: circle-tasker
+#    restart: on-failure
+#    build:
+#      context: .
+#      dockerfile: Dockerfile
+#    volumes:
+#      - ./BOT/data:/code/BOT/data
+#    entrypoint: ["python3", "app_task_manager.py"]
+#    ports:
+#      - 8872:8872
+
+
+  circle-mysql_db:
+    container_name: circle-mysql_db
+    image: mysql:8
+    restart: always
+    command: --default-authentication-plugin=mysql_native_password
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: secret
+      MYSQL_DATABASE: DB
+      MYSQL_USER: example
+      MYSQL_PASSWORD: secret2
+    volumes:
+      - ./BOT/db/dbdata:/var/lib/mysql/
 
